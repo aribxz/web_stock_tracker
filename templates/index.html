@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block body %}
+
+<div class="container glass-container">
+  <h2 class="mb-3">Track a Stock</h2>
+
+  {% if user %}
+  <form action="/" method="POST">
+    <div class="form-group">
+      <label for="title">Enter Stock Symbol</label>
+      <input type="text" class="form-control" name="title" id="title" placeholder="e.g., MSFT, TSLA, AAPL" required>
+    </div>
+    <button type="submit" class="btn btn-outline-dark">Add</button>
+  </form>
+  {% else %}
+  <p>Please <a href="/login">login</a> to track your own stocks.</p>
+  {% endif %}
+</div>
+
+<div class="container glass-container">
+  <h2 class="mb-3">Tracked Stocks</h2>
+
+  {% if allStocks|length == 0 %}
+  <div class="alert alert-dark" role="alert">
+    <h4 class="alert-heading">No stocks found!</h4>
+    {% if user %}
+    <p>Add a stock symbol using the form above to start tracking.</p>
+    {% else %}
+    <p>Log in to start tracking your own stocks.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <table class="table table-bordered table-hover my-3">
+    <thead class="thead-dark">
+      <tr>
+        <th>Symbol</th>
+        <th>Price</th>
+        <th>Change %</th>
+        <th>High</th>
+        <th>Low</th>
+        <th>Time</th>
+        {% if user %}
+        <th>Chart</th>
+        <th>Delete</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for stock in allStocks %}
+      <tr>
+        <td>{{ stock.Symbol }}</td>
+        <td>${{ stock.Price }}</td>
+        <td>{{ stock["Change %"] }}%</td>
+        <td>${{ stock.High }}</td>
+        <td>${{ stock.Low }}</td>
+        <td>{{ stock.Time }}</td>
+        {% if user %}
+        <td><a href="/chart/{{ stock.Symbol }}" class="btn btn-outline-dark btn-sm">📈</a></td>
+        <td><a href="/delete/{{ stock.sno }}" class="btn btn-outline-danger btn-sm">🗑</a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+{% endblock %}
