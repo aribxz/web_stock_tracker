@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block body %}
+
+<div class="container glass-container">
+  <h2 class="mb-4">📊 {{ symbol }} - Last 7 Days</h2>
+  <canvas id="stockChart" height="100"></canvas>
+</div>
+
+<div class="container glass-container mt-4">
+  <h4 class="mb-3">📄 Additional Info</h4>
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item"><strong>Previous Close:</strong> {{ extra_data.prev_close }}</li>
+    <li class="list-group-item"><strong>Current Price:</strong> {{ extra_data.current_price }}</li>
+    <li class="list-group-item"><strong>Day High:</strong> {{ extra_data.day_high }}</li>
+    <li class="list-group-item"><strong>Day Low:</strong> {{ extra_data.day_low }}</li>
+    <li class="list-group-item"><strong>Volume:</strong> {{ extra_data.volume }}</li>
+    <li class="list-group-item"><strong>Market Cap:</strong> {{ extra_data.market_cap }}</li>
+    <li class="list-group-item"><strong>Data Fetched At:</strong> {{ extra_data.fetched_at }}</li>
+  </ul>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('stockChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ labels | tojson }},
+      datasets: [{
+        label: '{{ symbol }} Closing Price',
+        data: {{ prices | tojson }},
+        backgroundColor: 'rgba(106, 13, 173, 0.2)',
+        borderColor: '#6a0dad',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: '#6a0dad',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: false
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}
