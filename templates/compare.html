@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compare Stocks</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(145deg, #2a0845, #6441a5);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .data-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            color: white;
+        }
+
+        h2, h4 {
+            color: #fff;
+        }
+
+        label, select {
+            color: #fff;
+        }
+
+        .btn-primary {
+            background-color: #8e2de2;
+            border-color: #8e2de2;
+        }
+
+        .btn-primary:hover {
+            background-color: #6a1cb7;
+            border-color: #6a1cb7;
+        }
+
+        .divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 40px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="glass container">
+    <h2 class="text-center mb-4">📊 Compare Two Stocks</h2>
+
+    <form method="POST" class="form-inline justify-content-center mb-4">
+        <div class="form-group mx-2">
+            <label for="stock1" class="mr-2">Stock 1:</label>
+            <select name="stock1" class="form-control">
+                {% for symbol in stock_list %}
+                    <option value="{{ symbol }}" {% if symbol == selected1 %}selected{% endif %}>{{ symbol }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mx-2">
+            <label for="stock2" class="mr-2">Stock 2:</label>
+            <select name="stock2" class="form-control">
+                {% for symbol in stock_list %}
+                    <option value="{{ symbol }}" {% if symbol == selected2 %}selected{% endif %}>{{ symbol }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary ml-2">Compare</button>
+    </form>
+
+    {% if stock1_data and stock2_data and stock1_history and stock2_history %}
+    <div class="row">
+        <div class="col-md-6">
+            <h4 class="text-center">{{ selected1 }}</h4>
+            <div class="chart-container">
+                <canvas id="chart1"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="line1"></canvas>
+            </div>
+            <div class="data-box">
+                <p><strong>Price:</strong> ₹{{ stock1_data['Price'] }}</p>
+                <p><strong>Change %:</strong> {{ stock1_data['Change %'] }}%</p>
+                <p><strong>High:</strong> ₹{{ stock1_data['High'] }}</p>
+                <p><strong>Low:</strong> ₹{{ stock1_data['Low'] }}</p>
+                <p><strong>Time:</strong> {{ stock1_data['Time'] }}</p>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4 class="text-center">{{ selected2 }}</h4>
+            <div class="chart-container">
+                <canvas id="chart2"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="line2"></canvas>
+            </div>
+            <div class="data-box">
+                <p><strong>Price:</strong> ₹{{ stock2_data['Price'] }}</p>
+                <p><strong>Change %:</strong> {{ stock2_data['Change %'] }}%</p>
+                <p><strong>High:</strong> ₹{{ stock2_data['High'] }}</p>
+                <p><strong>Low:</strong> ₹{{ stock2_data['Low'] }}</p>
+                <p><strong>Time:</strong> {{ stock2_data['Time'] }}</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const data1 = {
+            labels: ["Price", "Change %", "High", "Low"],
+            datasets: [{
+                label: "{{ selected1 }}",
+                backgroundColor: "rgba(142,45,226,0.6)",
+                borderColor: "rgba(142,45,226,1)",
+                data: [{{ stock1_data['Price'] }}, {{ stock1_data['Change %'] }}, {{ stock1_data['High'] }}, {{ stock1_data['Low'] }}]
+            }]
+        };
+
+        const data2 = {
+            labels: ["Price", "Change %", "High", "Low"],
+            datasets: [{
+                label: "{{ selected2 }}",
+                backgroundColor: "rgba(253,29,29,0.6)",
+                borderColor: "rgba(253,29,29,1)",
+                data: [{{ stock2_data['Price'] }}, {{ stock2_data['Change %'] }}, {{ stock2_data['High'] }}, {{ stock2_data['Low'] }}]
+            }]
+        };
+
+        new Chart(document.getElementById("chart1"), {
+            type: 'bar',
+            data: data1,
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        new Chart(document.getElementById("chart2"), {
+            type: 'bar',
+            data: data2,
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        const lineData1 = {
+            labels: {{ stock1_history.labels|tojson }},
+            datasets: [{
+                label: "{{ selected1 }} (7d)",
+                borderColor: "rgba(142,45,226,1)",
+                backgroundColor: "rgba(142,45,226,0.2)",
+                fill: true,
+                data: {{ stock1_history.prices|tojson }}
+            }]
+        };
+
+        const lineData2 = {
+            labels: {{ stock2_history.labels|tojson }},
+            datasets: [{
+                label: "{{ selected2 }} (7d)",
+                borderColor: "rgba(253,29,29,1)",
+                backgroundColor: "rgba(253,29,29,0.2)",
+                fill: true,
+                data: {{ stock2_history.prices|tojson }}
+            }]
+        };
+
+        new Chart(document.getElementById("line1"), {
+            type: 'line',
+            data: lineData1,
+            options: { responsive: true, scales: { y: { beginAtZero: false } } }
+        });
+
+        new Chart(document.getElementById("line2"), {
+            type: 'line',
+            data: lineData2,
+            options: { responsive: true, scales: { y: { beginAtZero: false } } }
+        });
+    </script>
+    {% endif %}
+</div>
+
+</body>
+</html>
