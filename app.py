@@ -160,6 +160,70 @@ def get_all_stock_data(user_id):
             print(f"⚠️ Error fetching {stock.symbol}: {e}")
     return data
 
+@app.route("/compare", methods=["GET", "POST"])
+@login_required
+def compare():
+    stock_list = [stock.symbol for stock in Stock.query.filter_by(user_id=current_user.id)]
+    selected1 = selected2 = stock1_data = stock2_data = None
+    stock1_history = stock2_history = None
+
+    if request.method == "POST":
+        selected1 = request.form.get("stock1")
+        selected2 = request.form.get("stock2")
+
+        if selected1 and selected2:
+            stock1_data = fetch_stock_info(selected1)
+            stock2_data = fetch_stock_info(selected2)
+
+            stock1_history = get_history(selected1)
+            stock2_history = get_history(selected2)
+
+    return render_template("compare.html",
+        stock_list=stock_list,
+        selected1=selected1,
+        selected2=selected2,
+        stock1_data=stock1_data,
+        stock2_data=stock2_data,
+        stock1_history=stock1_history,
+        stock2_history=stock2_history
+    )
+
+def get_history(symbol):
+    stock = yf.Ticker(symbol)
+    hist = stock.history(period="7d")
+    labels = hist.index.strftime('%Y-%m-%d').tolist()
+    prices = hist["Close"].round(2).tolist()
+    return {"labels": labels, "prices": prices}
+
+
+
+def get_stock_comparison_data(symbol):
+    stock = yf.Ticker(symbol)
+    hist = stock.history(period="7d")
+    dates = hist.index.strftime('%Y-%m-%d').tolist()
+    prices = hist["Close"].round(2).tolist()
+
+    info = stock.info
+    prev_close = info.get("previousClose", 0)
+    current_price = info.get("regularMarketPrice", 0)
+    high = info.get("dayHigh", 0)
+    low = info.get("dayLow", 0)
+    change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close else 0
+
+    return {
+        "symbol": symbol.upper(),
+        "dates": dates,
+        "prices": prices,
+        "current_price": current_price,
+        "prev_close": prev_close,
+        "high": high,
+        "low": low,
+        "change_percent": round(change_percent, 2),
+        "volume": info.get("volume", "-"),
+        "market_cap": info.get("marketCap", "-")
+    }
+
+
 def fetch_stock_info(symbol):
     stock = yf.Ticker(symbol)
     info = stock.info
